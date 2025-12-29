@@ -3,60 +3,124 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Online Tic Tac Toe</title>
+<title>Tic Tac Toe</title>
 
 <style>
-body {
-  font-family: system-ui, sans-serif;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  min-height: 100vh;
+/* Reset */
+* {
   margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Body background: dark, muted gradient */
+body {
   display: flex;
   justify-content: center;
   align-items: center;
-  color: #fff;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f111a, #1b2232);
+  color: #e0e0e0;
 }
 
+/* Game container with frosted glass effect */
 .game {
   text-align: center;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  padding: 40px 50px;
+  border-radius: 25px;
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
 }
 
+/* Header neon text */
+h1 {
+  font-size: 2.5rem;
+  color: #00f5d4; /* Soft cyan */
+  margin-bottom: 15px;
+}
+
+/* Status text */
+#status {
+  font-size: 1.1rem;
+  margin-bottom: 25px;
+  color: #a0f0e0;
+}
+
+/* Board grid */
 .board {
   display: grid;
   grid-template-columns: repeat(3, 100px);
-  gap: 10px;
-  margin: 20px auto;
+  grid-gap: 15px;
+  justify-content: center;
+  margin-bottom: 25px;
 }
 
+/* Cells: glass + subtle neon glow on hover */
 .cell {
   width: 100px;
   height: 100px;
-  background: rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.05);
+  border-radius: 15px;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   font-size: 2.5rem;
   cursor: pointer;
-  border-radius: 12px;
+  color: #00f5d4;
+  border: 1px solid rgba(0,245,212,0.3);
+  box-shadow: 0 0 5px rgba(0,245,212,0.2);
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.cell:hover {
+  background: rgba(255,255,255,0.1);
+  box-shadow: 0 0 8px #00f5d4, 0 0 30px rgba(0,245,212,0.5);
+  transform: scale(1.08);
 }
 
 .cell.disabled {
   pointer-events: none;
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
-.cell:hover {
-  background: rgba(255,255,255,0.4);
-}
-
+/* Restart button: glass + subtle glow */
 button {
-  padding: 10px 20px;
+  padding: 10px 25px;
   border: none;
-  border-radius: 10px;
-  background: #4e54c8;
-  color: #fff;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.05);
+  color: #00f5d4;
   font-size: 1rem;
   cursor: pointer;
+  border: 1px solid rgba(0,245,212,0.3);
+  box-shadow: 0 0 5px rgba(0,245,212,0.2);
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  background: rgba(255,255,255,0.1);
+  box-shadow: 0 0 15px #00f5d4, 0 0 30px rgba(0,245,212,0.5);
+}
+
+/* Responsive */
+@media (max-width: 500px) {
+  .board {
+    grid-template-columns: repeat(3, 70px);
+    grid-gap: 10px;
+  }
+  .cell {
+    width: 70px;
+    height: 70px;
+    font-size: 2rem;
+  }
+  h1 {
+    font-size: 2rem;
+  }
 }
 </style>
 </head>
@@ -64,7 +128,7 @@ button {
 <body>
 
 <div class="game">
-  <h1>Tic Tac Toe (Online)</h1>
+  <h1>Tic Tac Toe</h1>
   <div id="status">Waiting for another player…</div>
 
   <div class="board">
@@ -109,7 +173,6 @@ socket.on('updateBoard', board => {
 // 🔹 Turn handling
 socket.on('turn', turn => {
   currentTurn = turn;
-
   if (gameOver) return;
 
   if (mySymbol === turn) {
