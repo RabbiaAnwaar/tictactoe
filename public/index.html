@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Online Tic Tac Toe</title>
+
+<style>
+body {
+  font-family: system-ui, sans-serif;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  min-height: 100vh;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #fff;
+}
+
+.game {
+  text-align: center;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, 100px);
+  gap: 10px;
+  margin: 20px auto;
+}
+
+.cell {
+  width: 100px;
+  height: 100px;
+  background: rgba(255,255,255,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  cursor: pointer;
+  border-radius: 12px;
+}
+
+.cell:hover {
+  background: rgba(255,255,255,0.4);
+}
+
+button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  background: #4e54c8;
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="game">
+  <h1>Tic Tac Toe (Online)</h1>
+  <div id="status">Waiting for player...</div>
+
+  <div class="board">
+    <div class="cell" data-index="0"></div>
+    <div class="cell" data-index="1"></div>
+    <div class="cell" data-index="2"></div>
+    <div class="cell" data-index="3"></div>
+    <div class="cell" data-index="4"></div>
+    <div class="cell" data-index="5"></div>
+    <div class="cell" data-index="6"></div>
+    <div class="cell" data-index="7"></div>
+    <div class="cell" data-index="8"></div>
+  </div>
+
+  <button id="resetBtn">Restart</button>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+const cells = document.querySelectorAll('.cell');
+const statusText = document.getElementById('status');
+const resetBtn = document.getElementById('resetBtn');
+
+let mySymbol = null;
+let currentTurn = 'X';
+let gameOver = false;
+
+socket.on('assignSymbol', symbol => {
+  mySymbol = symbol;
+  statusText.textContent = `You are Player ${symbol}`;
+});
+
+socket.on('updateBoard', board => {
+  board.forEach((value, index) => {
+    cells[index].textContent = value;
+  });
+});
+
+socket.on('turn', turn => {
+  currentTurn = turn;
+  if (!gameOver) {
+    statusText.textContent = `Player ${turn}'s turn`;
+  }
+});
+
+socket.on('gameOver', message => {
+  gameOver = true;
+  statusText.textContent = message;
+});
+
+socket.on('roomFull', () => {
+  statusText.textContent = 'Room full. Try again later.';
+});
+
+socket.on('playerLeft', () => {
+  gameOver = false;
+  cells.forEach(c => c.textContent = '');
+  statusText.textContent = 'Opponent left. Waiting...';
+});
+
+cells.forEach(cell => {
+  cell.addEventListener('click', () => {
+    if (gameOver) return;
+    if (cell.textContent !== '') return;
+    if (mySymbol !== currentTurn) return;
+
+    socket.emit('makeMove', cell.dataset.index);
+  });
+});
+
+resetBtn.addEventListener('click', () => {
+  gameOver = false;
+  socket.emit('resetGame');
+});
+</script>
+
+</body>
+</html>
