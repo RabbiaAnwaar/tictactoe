@@ -11,6 +11,7 @@ app.use(express.static('public'));
 let players = [];
 let board = Array(9).fill('');
 let currentPlayer = 'X';
+let gameActive = true;
 
 const winningCombinations = [
   [0,1,2],[3,4,5],[6,7,8],
@@ -25,36 +26,49 @@ function checkWin(player) {
 }
 
 io.on('connection', socket => {
+
+  // ❌ Room full
   if (players.length >= 2) {
     socket.emit('roomFull');
     return;
   }
 
+  // ✅ Assign symbol
   const symbol = players.length === 0 ? 'X' : 'O';
   players.push({ id: socket.id, symbol });
 
   socket.emit('assignSymbol', symbol);
-  io.emit('updateBoard', board);
+
+  // ✅ Sync state ONCE
+  socket.emit('updateBoard', board);
   io.emit('turn', currentPlayer);
 
   socket.on('makeMove', index => {
+    if (!gameActive) return;
     if (board[index] !== '') return;
-    if (players.find(p => p.id === socket.id)?.symbol !== currentPlayer) return;
+
+    const player = players.find(p => p.id === socket.id);
+    if (!player || player.symbol !== currentPlayer) return;
 
     board[index] = currentPlayer;
 
+    // ✅ Win
     if (checkWin(currentPlayer)) {
+      gameActive = false;
       io.emit('updateBoard', board);
       io.emit('gameOver', `Player ${currentPlayer} wins!`);
       return;
     }
 
+    // ✅ Draw
     if (board.every(cell => cell !== '')) {
+      gameActive = false;
       io.emit('updateBoard', board);
       io.emit('gameOver', "It's a draw!");
       return;
     }
 
+    // 🔁 Switch turn
     currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
     io.emit('updateBoard', board);
     io.emit('turn', currentPlayer);
@@ -63,6 +77,7 @@ io.on('connection', socket => {
   socket.on('resetGame', () => {
     board = Array(9).fill('');
     currentPlayer = 'X';
+    gameActive = true;
     io.emit('updateBoard', board);
     io.emit('turn', currentPlayer);
   });
@@ -71,6 +86,7 @@ io.on('connection', socket => {
     players = players.filter(p => p.id !== socket.id);
     board = Array(9).fill('');
     currentPlayer = 'X';
+    gameActive = true;
     io.emit('playerLeft');
   });
 });

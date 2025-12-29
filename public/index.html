@@ -40,6 +40,11 @@ body {
   border-radius: 12px;
 }
 
+.cell.disabled {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
 .cell:hover {
   background: rgba(255,255,255,0.4);
 }
@@ -60,7 +65,7 @@ button {
 
 <div class="game">
   <h1>Tic Tac Toe (Online)</h1>
-  <div id="status">Waiting for player...</div>
+  <div id="status">Waiting for another player…</div>
 
   <div class="board">
     <div class="cell" data-index="0"></div>
@@ -88,39 +93,56 @@ let mySymbol = null;
 let currentTurn = 'X';
 let gameOver = false;
 
+// 🔹 Assign X or O
 socket.on('assignSymbol', symbol => {
   mySymbol = symbol;
   statusText.textContent = `You are Player ${symbol}`;
 });
 
+// 🔹 Update board
 socket.on('updateBoard', board => {
   board.forEach((value, index) => {
     cells[index].textContent = value;
   });
 });
 
+// 🔹 Turn handling
 socket.on('turn', turn => {
   currentTurn = turn;
-  if (!gameOver) {
-    statusText.textContent = `Player ${turn}'s turn`;
+
+  if (gameOver) return;
+
+  if (mySymbol === turn) {
+    statusText.textContent = "Your turn";
+    enableBoard(true);
+  } else {
+    statusText.textContent = "Opponent's turn";
+    enableBoard(false);
   }
 });
 
+// 🔹 Game over
 socket.on('gameOver', message => {
   gameOver = true;
   statusText.textContent = message;
+  enableBoard(false);
 });
 
+// 🔹 Room full
 socket.on('roomFull', () => {
   statusText.textContent = 'Room full. Try again later.';
+  enableBoard(false);
 });
 
+// 🔹 Opponent left
 socket.on('playerLeft', () => {
   gameOver = false;
   cells.forEach(c => c.textContent = '');
-  statusText.textContent = 'Opponent left. Waiting...';
+  statusText.textContent = 'Opponent left. Waiting for new player…';
+  enableBoard(false);
 });
 
+// 🔹 Cell click
 cells.forEach(cell => {
   cell.addEventListener('click', () => {
     if (gameOver) return;
@@ -131,10 +153,17 @@ cells.forEach(cell => {
   });
 });
 
+// 🔹 Restart
 resetBtn.addEventListener('click', () => {
-  gameOver = false;
   socket.emit('resetGame');
 });
+
+// 🔹 Enable / disable board
+function enableBoard(enable) {
+  cells.forEach(cell => {
+    cell.classList.toggle('disabled', !enable);
+  });
+}
 </script>
 
 </body>
